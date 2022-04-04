@@ -1,0 +1,122 @@
+AC_INIT([[libtorrent]],[[0.13.8]],[[sundell.software@gmail.com]])
+
+AC_CONFIG_HEADERS([config.h])
+AC_CONFIG_MACRO_DIRS([scripts])
+AM_INIT_AUTOMAKE([serial-tests subdir-objects foreign])
+
+LT_INIT([[disable-static]])
+
+dnl Find a better way to do this
+AC_DEFINE([[PEER_NAME]], [["-lt0D80-"]], [[Identifier that is part of the default peer id.]])
+AC_DEFINE([[PEER_VERSION]], [["lt\x0D\x80"]], [[4 byte client and version identifier for DHT.]])
+
+LIBTORRENT_CURRENT=21
+LIBTORRENT_REVISION=0
+LIBTORRENT_AGE=0
+
+LIBTORRENT_INTERFACE_VERSION_INFO=$LIBTORRENT_CURRENT:$LIBTORRENT_REVISION:$LIBTORRENT_AGE
+LIBTORRENT_INTERFACE_VERSION_NO=$LIBTORRENT_CURRENT.$LIBTORRENT_AGE.$LIBTORRENT_REVISION
+
+AC_SUBST(LIBTORRENT_CURRENT)
+AC_SUBST(LIBTORRENT_INTERFACE_VERSION_INFO)
+AC_SUBST(LIBTORRENT_INTERFACE_VERSION_NO)
+
+AC_PROG_CXX
+AC_SYS_LARGEFILE
+
+AC_C_BIGENDIAN(
+  AC_DEFINE(IS_BIG_ENDIAN, 1, Big endian),
+  AC_DEFINE(IS_LITTLE_ENDIAN, 1, Little endian),
+  AC_MSG_ERROR([Could not determine endianness])
+)
+
+AX_CXX_COMPILE_STDCXX(14, noext, mandatory)
+
+RAK_CHECK_CFLAGS
+RAK_CHECK_CXXFLAGS
+RAK_ENABLE_DEBUG
+RAK_ENABLE_EXTRA_DEBUG
+RAK_ENABLE_WERROR
+
+TORRENT_ENABLE_ALIGNED
+TORRENT_ENABLE_INTERRUPT_SOCKET
+
+TORRENT_ENABLE_ARCH
+TORRENT_WITH_SYSROOT
+
+dnl TORRENT_WITH_XFS
+TORRENT_WITHOUT_KQUEUE
+TORRENT_WITHOUT_EPOLL
+TORRENT_CHECK_FALLOCATE
+TORRENT_WITH_POSIX_FALLOCATE
+TORRENT_WITH_ADDRESS_SPACE
+
+TORRENT_WITHOUT_STATVFS
+TORRENT_WITHOUT_STATFS
+TORRENT_WITH_INOTIFY
+
+AC_ARG_ENABLE(attribute-visibility,
+  AS_HELP_STRING([--disable-attribute-visibility],[disable symbol visibility attribute [[default=enable]]]),
+  [
+    if test "$enableval" = "yes"; then
+      CC_ATTRIBUTE_VISIBILITY
+    fi
+  ],[
+    CC_ATTRIBUTE_VISIBILITY
+  ])
+
+AC_ARG_ENABLE(execinfo,
+  AS_HELP_STRING([--disable-execinfo],[disable libexecinfo [[default=enable]]]),
+  [
+    if test "$enableval" = "yes"; then
+      AX_EXECINFO
+    fi
+  ],[
+    AX_EXECINFO
+  ])
+
+AX_CHECK_ZLIB
+AX_PTHREAD
+
+PKG_CHECK_MODULES([CPPUNIT], [cppunit],, [no_cppunit="yes"])
+
+CFLAGS="$PTHREAD_CFLAGS $CPPUNIT_CFLAGS $CFLAGS"
+CXXFLAGS="$PTHREAD_CFLAGS $CPPUNIT_CFLAGS $CXXFLAGS"
+LIBS="$PTHREAD_LIBS $CPPUNIT_LIBS $LIBS"
+
+TORRENT_ARG_OPENSSL
+TORRENT_ARG_CYRUS_RC4
+
+AC_CHECK_FUNCS(posix_memalign)
+
+TORRENT_CHECK_MADVISE
+TORRENT_CHECK_CACHELINE
+TORRENT_CHECK_POPCOUNT
+TORRENT_DISABLE_PTHREAD_SETNAME_NP
+TORRENT_MINCORE
+
+TORRENT_DISABLE_INSTRUMENTATION
+
+LIBTORRENT_LIBS="-ltorrent"
+AC_SUBST(LIBTORRENT_LIBS)
+
+LIBTORRENT_CFLAGS=""
+AC_SUBST(LIBTORRENT_CFLAGS)
+
+AC_DEFINE(HAVE_CONFIG_H, 1, true if config.h was included)
+
+CC_ATTRIBUTE_UNUSED(
+  AC_DEFINE([__UNUSED], [__attribute__((unused))], [Wrapper around unused attribute]),
+  AC_DEFINE([__UNUSED], [], [Null-wrapper if unused attribute is unsupported])
+)
+
+AC_CONFIG_FILES([
+	libtorrent.pc
+	Makefile
+	src/Makefile
+	src/torrent/Makefile
+  test/Makefile
+  test/torrent/net/Makefile
+  test/net/Makefile
+])
+AC_OUTPUT
